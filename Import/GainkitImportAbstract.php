@@ -17,27 +17,27 @@ abstract class GainkitImportAbstract
 	 */
 	const TABLE_NAME = 'market';
 
-    const INSERT_SPLIT      = 100;
+	const INSERT_SPLIT = 100;
 	/**
 	 * Main keys used to import work.
 	 */
-    const GAINKIT_PRIMARY_KEY = 'id';
-    const GAINKIT_CLASSID     = 'classid';
-    const GAINKIT_INSTANCEID  = 'instanceid';
-    const GAINKIT_GAME        = 'game';
-	const GAINKIT_PRICE       = 'price';
-    const GAINKIT_OFFERS      = 'offers';
-    const GAINKIT_UPDATEDAT   = 'updated_at';
+	const GAINKIT_PRIMARY_KEY = 'id';
+	const GAINKIT_CLASSID = 'classid';
+	const GAINKIT_INSTANCEID = 'instanceid';
+	const GAINKIT_GAME = 'game';
+	const GAINKIT_PRICE = 'price';
+	const GAINKIT_OFFERS = 'offers';
+	const GAINKIT_UPDATEDAT = 'updated_at';
 
 
-	const GAINKIT_URL          = 'https://gainkit.com';
-	const GAINKIT_API_VERSION  = '/api/v1';
+	const GAINKIT_URL = 'https://gainkit.com';
+	const GAINKIT_API_VERSION = '/api/v1';
 
 	const API_REQUEST = self::GAINKIT_URL . self::GAINKIT_API_VERSION;
 
-	const GAME                 = '';
-	const GAINKIT_DB_FIELDS    = '';
-	const GAINKIT_DB_GAME_URL  = '';
+	const GAME = '';
+	const GAINKIT_DB_FIELDS = '';
+	const GAINKIT_DB_GAME_URL = '';
 	/**
 	 * @var PDO
 	 */
@@ -52,20 +52,20 @@ abstract class GainkitImportAbstract
 	 * Import keys
 	 * @var array
 	 */
-    protected $csvKeys = [];
+	protected $csvKeys = [];
 	/**
 	 * Merchant API key for Gainkit.
 	 * @var string
 	 */
 	protected $apiKey = '';
 
-    /**
-     * What will be updated in our DB.
-     * @var array
-     */
-    protected $keysToUpdate = [
-        self::GAINKIT_OFFERS, self::GAINKIT_PRICE, self::GAINKIT_UPDATEDAT
-    ];
+	/**
+	 * What will be updated in our DB.
+	 * @var array
+	 */
+	protected $keysToUpdate = [
+		self::GAINKIT_OFFERS, self::GAINKIT_PRICE, self::GAINKIT_UPDATEDAT
+	];
 
 	public function __construct($config)
 	{
@@ -101,214 +101,215 @@ abstract class GainkitImportAbstract
 	 * @email       alejandronat@gmail.com
 	 */
 	public function start()
-    {
-	    $this->info('Start. ' . date("Y-m-d H:i:s"));
+	{
+		$this->info('Start. ' . date("Y-m-d H:i:s"));
 
 		$this->initDB();
 
-	    // Create a stream
-	    $opts = [
-		    "http" => [
-			    "method" => "GET",
-			    "header" => "X-Api-Key: $this->apiKey\r\n"
-		    ]
-	    ];
+		// Create a stream
+		$opts = [
+			"http" => [
+				"method" => "GET",
+				"header" => "X-Api-Key: $this->apiKey\r\n"
+			]
+		];
 
-	    try {
-		    $this->csvKeys = json_decode(
-			    file_get_contents(
-				    self::API_REQUEST . static::GAINKIT_DB_FIELDS,
-				    false,
-				    stream_context_create($opts)
-			    ), true);
-	    } catch (\ErrorException $e) {
-		    $this->info('Failed to get import fields from Gainkit. ' . date("Y-m-d H:i:s"));
-		    return;
-	    }
+		try {
+			$this->csvKeys = json_decode(
+				file_get_contents(
+					self::API_REQUEST . static::GAINKIT_DB_FIELDS,
+					false,
+					stream_context_create($opts)
+				), true);
+		} catch (\ErrorException $e) {
+			$this->info('Failed to get import fields from Gainkit. ' . date("Y-m-d H:i:s"));
+			return;
+		}
 
-	    if (empty($this->csvKeys)) {
-		    $this->info('CSV Import keys not valid!');
-		    return;
-	    }
+		if (empty($this->csvKeys)) {
+			$this->info('CSV Import keys not valid!');
+			return;
+		}
 
-	    try {
-		    $actualDb = file_get_contents(self::API_REQUEST . static::GAINKIT_DB_GAME_URL, false, stream_context_create($opts));
-	    } catch (\ErrorException $e) {
-		    $this->info('Failed to get new DB from Gainkit. ' . date("Y-m-d H:i:s"));
-		    return;
-	    }
+		try {
+			$actualDb = file_get_contents(self::API_REQUEST . static::GAINKIT_DB_GAME_URL, false, stream_context_create($opts));
+		} catch (\ErrorException $e) {
+			$this->info('Failed to get new DB from Gainkit. ' . date("Y-m-d H:i:s"));
+			return;
+		}
 
-	    $this->info('Download finished. ' . date("Y-m-d H:i:s"));
-	    $this->showMemory();
+		$this->info('Download finished. ' . date("Y-m-d H:i:s"));
+		$this->showMemory();
 
-	    $inputCsv = Reader::createFromString($actualDb);
-	    $inputCsv->setDelimiter(';');
-	    $inputCsv->setOffset(1);
-	    $newDbArray = iterator_to_array($inputCsv->fetchAssoc($this->csvKeys));
-        $this->info('CSV in array.' . date("Y-m-d H:i:s"));
-	    $this->showMemory();
+		$inputCsv = Reader::createFromString($actualDb);
+		$inputCsv->setDelimiter(';');
+		$inputCsv->setOffset(1);
+		$newDbArray = iterator_to_array($inputCsv->fetchAssoc($this->csvKeys));
+		$this->info('CSV in array.' . date("Y-m-d H:i:s"));
+		$this->showMemory();
 
-        $getItemsSql = "select `id`, `game`, `classid`, `instanceid`, `price` from `market` where `game` = ?";
+		$getItemsSql = "select `id`, `game`, `classid`, `instanceid`, `price` from `market` where `game` = ?";
 
-        $query = $this->db->prepare($getItemsSql);
-        $query->execute([static::GAME]);
+		$query = $this->db->prepare($getItemsSql);
+		$query->execute([static::GAME]);
 
-        $GKD2netDB = [];
-        $this->info('Start fetchAll: ' . date("Y-m-d H:i:s"));
+		$GKD2netDB = [];
+		$this->info('Start fetchAll: ' . date("Y-m-d H:i:s"));
 
-        while ($row = $query->fetch(PDO::FETCH_ASSOC)) {
-            $GKD2netDB[] = $row;
-        }
+		while ($row = $query->fetch(PDO::FETCH_ASSOC)) {
+			$GKD2netDB[] = $row;
+		}
 
-        $this->info('Finish fetchAll: ' . date("Y-m-d H:i:s"));
-	    $this->showMemory();
+		$this->info('Finish fetchAll: ' . date("Y-m-d H:i:s"));
+		$this->showMemory();
 
-        $oldDbUniqueKeys = $this->unifyKeyForDB($GKD2netDB);
+		$oldDbUniqueKeys = $this->unifyKeyForDB($GKD2netDB);
 
-        $toUpdate = [];
-        $toInsert = [];
-        $hasOffers = [];
-        $this->info('Start preparing insert/update: ' . date("Y-m-d H:i:s"));
-	    /**
-	     * Start compare new & old databases, make desigion on compare result.
-	     */
-        for ($i=1, $n=count($newDbArray); $i < $n; $i++) {
-            $dbItem = &$newDbArray[$i];
-            //add Game
-            $dbItem[static::GAINKIT_GAME] = static::GAME;
-            //Create unique keys from classid, instanceid.
-            $key = "{$dbItem[static::GAINKIT_GAME]}{$dbItem[static::GAINKIT_CLASSID]}{$dbItem[static::GAINKIT_INSTANCEID]}";
-            $value = $dbItem;
+		$toUpdate = [];
+		$toInsert = [];
+		$hasOffers = [];
+		$this->info('Start preparing insert/update: ' . date("Y-m-d H:i:s"));
+		/**
+		 * Start compare new & old databases, make desigion on compare result.
+		 */
+		for ($i = 1, $n = count($newDbArray); $i < $n; $i++) {
+			$dbItem = &$newDbArray[$i];
+			//add Game
+			$dbItem[static::GAINKIT_GAME] = static::GAME;
+			//Create unique keys from classid, instanceid.
+			$key = "{$dbItem[static::GAINKIT_GAME]}{$dbItem[static::GAINKIT_CLASSID]}{$dbItem[static::GAINKIT_INSTANCEID]}";
+			$value = $dbItem;
 
-            $value[self::GAINKIT_PRICE] = self::integerCents($value[self::GAINKIT_PRICE]);
-	        $value[self::GAINKIT_UPDATEDAT] = date("Y-m-d H:i:s");
-            
-            //If item already exist in our DB.
-            if (isset($oldDbUniqueKeys[$key])) {
-                $primaryId = $oldDbUniqueKeys[$key][static::GAINKIT_PRIMARY_KEY];
-                $hasOffers[] = $primaryId;             
-                //remove primary key of inserted item for diff.
-                unset($oldDbUniqueKeys[$key][static::GAINKIT_PRIMARY_KEY]);
-                //Check if field need to be updated.
-                if (self::diffImport($oldDbUniqueKeys[$key], $value)) {
-                    $item = [];
-                    //update only selected fields.
-                    foreach ($this->keysToUpdate as $ktu) {
-                        $item[$ktu] = $value[$ktu];
-                    }
-                    //add datetime of processing.
-                    $toUpdate[$primaryId] = $item;
-                }
-                $oldDbUniqueKeys[$key] = null;
-            } else {
-                $value[self::GAINKIT_UPDATEDAT] = date("Y-m-d H:i:s");
-                $toInsert[] = $value;
-            }
-	        /**
-	         * Slow down, so script don't eat all CPU at once .
-	         */
-            usleep(100);
-        }
+			$value[self::GAINKIT_PRICE] = self::integerCents($value[self::GAINKIT_PRICE]);
+			$value[self::GAINKIT_UPDATEDAT] = date("Y-m-d H:i:s");
 
-        $newDbArray = null;
-        $oldDbUniqueKeys = null;
+			//If item already exist in our DB.
+			if (isset($oldDbUniqueKeys[$key])) {
+				$primaryId = $oldDbUniqueKeys[$key][static::GAINKIT_PRIMARY_KEY];
+				$hasOffers[] = $primaryId;
+				//remove primary key of inserted item for diff.
+				unset($oldDbUniqueKeys[$key][static::GAINKIT_PRIMARY_KEY]);
+				//Check if field need to be updated.
+				if (self::diffImport($oldDbUniqueKeys[$key], $value)) {
+					$item = [];
+					//update only selected fields.
+					foreach ($this->keysToUpdate as $ktu) {
+						$item[$ktu] = $value[$ktu];
+					}
+					//add datetime of processing.
+					$toUpdate[$primaryId] = $item;
+				}
+				$oldDbUniqueKeys[$key] = null;
+			} else {
+				$value[self::GAINKIT_UPDATEDAT] = date("Y-m-d H:i:s");
+				$toInsert[] = $value;
+			}
+			/**
+			 * Slow down, so script don't eat all CPU at once .
+			 */
+			usleep(100);
+		}
 
-        $this->info('Preparing insert/update finished. ' . date("Y-m-d H:i:s"));
+		$newDbArray = null;
+		$oldDbUniqueKeys = null;
 
-	    if (count($hasOffers) > 0) {
-		    $this->info('Hide not used items. ' . date("Y-m-d H:i:s") );
+		$this->info('Preparing insert/update finished. ' . date("Y-m-d H:i:s"));
 
-		    $query = $this->db->prepare("UPDATE market SET offers = ? WHERE game = ? AND id NOT IN (" . implode(', ', array_fill(0, sizeof($hasOffers), '?')) . ")");
+		if (count($hasOffers) > 0) {
+			$this->info('Hide not used items. ' . date("Y-m-d H:i:s"));
 
-		    array_unshift($hasOffers, static::GAME);
-		    array_unshift($hasOffers, 0);
+			$query = $this->db->prepare("UPDATE market SET offers = ? WHERE game = ? AND id NOT IN (" . implode(', ', array_fill(0, sizeof($hasOffers), '?')) . ")");
 
-		    $query->execute($hasOffers);
+			array_unshift($hasOffers, static::GAME);
+			array_unshift($hasOffers, 0);
 
-		    $this->info('Hidden items: ' . $query->rowCount());
-	    }
+			$query->execute($hasOffers);
 
-	    $this->info('Start insert/update. ' . date("Y-m-d H:i:s"));
+			$this->info('Hidden items: ' . $query->rowCount());
+		}
 
-        //Insert new items to DB if we have any.
-        if (!empty($toInsert)) {
-            $notInserted = 0;
-	        $inserted = 0;
-            $this->info('To Insert:' . count($toInsert));
-            //Insert by N items at a time.
-            $splitedInsert = array_chunk($toInsert, static::INSERT_SPLIT);
-            foreach ($splitedInsert as $insert) {
-	            $keysValues = self::arrayToInsertParams($insert);
-                try {
-	                $query = $this->db->prepare("INSERT INTO market (" . $keysValues['keys'] . ") VALUES " . $keysValues['marks']);
-	                $query->execute($keysValues['values']);
-	                $inserted += $query->rowCount();
-                } catch (\Exception $e) {
-                    $notInserted += count($insert);
-                    $this->info('Insert fail with exception.' . $e->getMessage());
-                }
+		$this->info('Start insert/update. ' . date("Y-m-d H:i:s"));
 
-            }
-	        $this->info(($inserted) . ' Items Inserted.' . date("Y-m-d H:i:s"));
-	        $this->info($notInserted . ' inserts failed.' . date("Y-m-d H:i:s"));
-        } else {
-            $this->info('Nothing to Insert.');
-        }
-        
-        //Update items if we have any for update.
-        if (!empty($toUpdate)) {
-            $this->info('To Update:' . count($toUpdate));
-	        $updated = 0;
-            foreach ($toUpdate as $pkey => $update) {
-	            $keys = self::arrayToUpdateParams($update);
-	            $query = $this->db->prepare("UPDATE market SET $keys WHERE id = ?");
-	            $query->execute([$pkey]);
-	            $updated += $query->rowCount();
-            }
-	        $this->info('Updated items: ' . $updated);
-        } else {
-            $this->info('Nothing to Update.');
-        }
+		//Insert new items to DB if we have any.
+		if (!empty($toInsert)) {
+			$notInserted = 0;
+			$inserted = 0;
+			$this->info('To Insert:' . count($toInsert));
+			//Insert by N items at a time.
+			$splitedInsert = array_chunk($toInsert, static::INSERT_SPLIT);
+			foreach ($splitedInsert as $insert) {
+				$keysValues = self::arrayToInsertParams($insert);
+				try {
+					$query = $this->db->prepare("INSERT INTO market (" . $keysValues['keys'] . ") VALUES " . $keysValues['marks']);
+					$query->execute($keysValues['values']);
+					$inserted += $query->rowCount();
+				} catch (\Exception $e) {
+					$notInserted += count($insert);
+					$this->info('Insert fail with exception.' . $e->getMessage());
+				}
 
-        $this->info('Insert/update finished. ' . date("Y-m-d H:i:s"));
-        $this->info('Finished. ' . count($hasOffers) . ' - ' . date("Y-m-d H:i:s") );
-        $this->showMemory();
-    }
+			}
+			$this->info(($inserted) . ' Items Inserted.' . date("Y-m-d H:i:s"));
+			$this->info($notInserted . ' inserts failed.' . date("Y-m-d H:i:s"));
+		} else {
+			$this->info('Nothing to Insert.');
+		}
 
-    /**
-     * Create unique key from concatenating composite in DB.
-     * @author Alexander Natalenko
-     * @email       alejandronat@gmail.com
-     * @param       array                    $newDbArray [description]
-     * @return      array                    Items in DB with unique key.
-     */
-    public function unifyKeyForDB(array $newDbArray)
-    {
-        $time1 = date("Y-m-d H:i:s");
+		//Update items if we have any for update.
+		if (!empty($toUpdate)) {
+			$this->info('To Update:' . count($toUpdate));
+			$updated = 0;
+			foreach ($toUpdate as $pkey => $update) {
+				$keys = self::arrayToUpdateParams($update);
+				$query = $this->db->prepare("UPDATE market SET $keys WHERE id = ?");
+				$query->execute([$pkey]);
+				$updated += $query->rowCount();
+			}
+			$this->info('Updated items: ' . $updated);
+		} else {
+			$this->info('Nothing to Update.');
+		}
 
-        $newDbUniqueKeys = [];
+		$this->info('Insert/update finished. ' . date("Y-m-d H:i:s"));
+		$this->info('Finished. ' . count($hasOffers) . ' - ' . date("Y-m-d H:i:s"));
+		$this->showMemory();
+	}
 
-        for ($i=0, $n=count($newDbArray); $i < $n; $i++) {
-            $array = &$newDbArray[$i];
-            //create unique id
-            $newDbUniqueKeys["{$array[static::GAINKIT_GAME]}{$array[static::GAINKIT_CLASSID]}{$array[static::GAINKIT_INSTANCEID]}"] = $array;
-            unset($newDbArray[$i]);
-	        /**
-	         * Slow down, so script don't eat all CPU at once .
-	         */
-            usleep(100);
-        }
+	/**
+	 * Create unique key from concatenating composite in DB.
+	 * @author Alexander Natalenko
+	 * @email       alejandronat@gmail.com
+	 * @param       array $newDbArray [description]
+	 * @return      array                    Items in DB with unique key.
+	 */
+	public function unifyKeyForDB(array $newDbArray)
+	{
+		$time1 = date("Y-m-d H:i:s");
 
-        $this->info('DB Array unified for:' . $time1 . '-' . date("Y-m-d H:i:s"));
-	    $this->showMemory();
+		$newDbUniqueKeys = [];
 
-        return $newDbUniqueKeys;
-    }
+		for ($i = 0, $n = count($newDbArray); $i < $n; $i++) {
+			$array = &$newDbArray[$i];
+			//create unique id
+			$newDbUniqueKeys["{$array[static::GAINKIT_GAME]}{$array[static::GAINKIT_CLASSID]}{$array[static::GAINKIT_INSTANCEID]}"] = $array;
+			unset($newDbArray[$i]);
+			/**
+			 * Slow down, so script don't eat all CPU at once .
+			 */
+			usleep(100);
+		}
+
+		$this->info('DB Array unified for:' . $time1 . '-' . date("Y-m-d H:i:s"));
+		$this->showMemory();
+
+		return $newDbUniqueKeys;
+	}
 
 	/**
 	 * Initiate connection to our database.
 	 */
-	protected function initDB() {
+	protected function initDB()
+	{
 		$this->db = new PDO(
 			$this->dbconnection,
 			$this->dblogin, $this->dbpassword,
@@ -321,7 +322,8 @@ abstract class GainkitImportAbstract
 	 * @param array $params
 	 * @return string
 	 */
-	protected static function arrayToUpdateParams(array $params) : string {
+	protected static function arrayToUpdateParams(array $params) : string
+	{
 
 		$updateStringParams = [];
 
@@ -329,14 +331,15 @@ abstract class GainkitImportAbstract
 			$updateStringParams[] = $key . '="' . $param . '"';
 		}
 
-		return implode(',' , $updateStringParams);
+		return implode(',', $updateStringParams);
 	}
 
 	/**
 	 * @param array $params
 	 * @return array
 	 */
-	protected static function arrayToInsertParams(array $params) : array {
+	protected static function arrayToInsertParams(array $params) : array
+	{
 
 		$keys = [];
 		$values = [];
@@ -360,22 +363,23 @@ abstract class GainkitImportAbstract
 		];
 	}
 
-    /**
-     * Compare only fields that important to us.
-     * @author Alexander Natalenko
-     * @email       alejandronat@gmail.com
-     * @return boolean Notify if we need to update price.
-     */
-    protected static function diffImport($oldRow, $newRow)
-    {
-        //If prices are equal - return false.
-        return boolval(round($newRow[self::GAINKIT_PRICE]) <=> round($oldRow[self::GAINKIT_PRICE]));
-    }
+	/**
+	 * Compare only fields that important to us.
+	 * @author Alexander Natalenko
+	 * @email       alejandronat@gmail.com
+	 * @return boolean Notify if we need to update price.
+	 */
+	protected static function diffImport($oldRow, $newRow)
+	{
+		//If prices are equal - return false.
+		return boolval(round($newRow[self::GAINKIT_PRICE]) <=> round($oldRow[self::GAINKIT_PRICE]));
+	}
 
 	/**
 	 * Show if there any memory leaks.
 	 */
-	protected static function showMemory() {
+	protected static function showMemory()
+	{
 		self::info('Memory usage:' . self::convert(memory_get_usage(true)));
 	}
 
@@ -383,16 +387,17 @@ abstract class GainkitImportAbstract
 	 * @param $size
 	 * @return string
 	 */
-    protected static function convert($size)
-    {
-        $unit=array('b','kb','mb','gb','tb','pb');
-        return @round($size/pow(1024,($i=floor(log($size,1024)))),2).' '.$unit[$i];
-    }
+	protected static function convert($size)
+	{
+		$unit = array('b', 'kb', 'mb', 'gb', 'tb', 'pb');
+		return @round($size / pow(1024, ($i = floor(log($size, 1024)))), 2) . ' ' . $unit[$i];
+	}
 
 	/**
 	 * @param $text
 	 */
-	protected static function info($text) {
+	protected static function info($text)
+	{
 		echo $text . "\n";
 	}
 
@@ -400,7 +405,8 @@ abstract class GainkitImportAbstract
 	 * @param $cents
 	 * @return float
 	 */
-	protected static function integerCents($cents) {
+	protected static function integerCents($cents)
+	{
 		return round($cents, 0);
 	}
 }

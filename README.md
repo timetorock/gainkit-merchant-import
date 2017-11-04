@@ -1,7 +1,7 @@
 # gainkit-merchant-import
 Example how to proceed fast gainkit.com price listings.
 
-#How to start
+# How to start
 
 - Create account on https://gainkit.com/
 - Get your [Merchant account](mailto:support@gainkit.com).
