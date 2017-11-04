@@ -1,5 +1,13 @@
 # gainkit-merchant-import
-Example how to proceed fast gainkit.com price listings.
+
+This script was made for 2 targets:
+- Example how to proceed fast gainkit.com price listings
+- How fast to:
+  - proceed CSV
+  - compare with your DB
+  - update your DB
+
+And all these less then in a minute for 100k+ lines.
 
 # How to start
 
@@ -22,3 +30,9 @@ Example how to proceed fast gainkit.com price listings.
 - Create your database and table with script from `database -> database.sql`
 - Start script from console: `php -f import.php`
 - Customize script for your needs, and good luck! :)
+
+# Requirements
+
+- PHP 7 (Easy switch to PHP 5.6, just remove some PHP7 type returns.)
+- MySQL
+- [Composer](https://getcomposer.org/)
