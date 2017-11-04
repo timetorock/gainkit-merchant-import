@@ -1,0 +1,21 @@
+{
+    "name": "timetorock/gainkit-merchant-import",
+    "description": "Example how to proceed fast price listings from gainkit.com .",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Aleksandr Natalenko",
+            "email": "alejandronat@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.0.0",
+        "league/csv": "^8.0"
+    },
+	"autoload": {
+	  "psr-4": {
+		"Import\\": "import/"
+	  }
+	}
+}

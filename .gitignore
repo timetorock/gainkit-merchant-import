@@ -1,0 +1,12 @@
+# Created by .ignore support plugin (hsz.mobi)
+.idea/copyright/
+.idea/deployment.xml
+.idea/gainkit-merchant-import.iml
+.idea/inspectionProfiles/
+.idea/markdown-navigator.xml
+.idea/markdown-navigator/
+.idea/misc.xml
+.idea/modules.xml
+.idea/php.xml
+.idea/workspace.xml
+vendor/
